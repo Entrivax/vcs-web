@@ -1,0 +1,34 @@
+{
+    "name": "vanillajs-jsx-babel",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "build": "rollup -c",
+        "watch": "rollup -c -w",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "type": "module",
+    "keywords": [],
+    "author": "Entrivax",
+    "license": "MIT",
+    "devDependencies": {
+        "@babel/cli": "^7.20.7",
+        "@babel/core": "^7.20.12",
+        "@babel/preset-react": "^7.18.6",
+        "@babel/preset-typescript": "^7.21.0",
+        "@preact/compat": "^17.1.2",
+        "@rollup/plugin-alias": "^4.0.3",
+        "@rollup/plugin-babel": "^6.0.3",
+        "@rollup/plugin-node-resolve": "^15.0.1",
+        "rollup": "^3.14.0",
+        "rollup-plugin-copy": "^3.4.0",
+        "sass": "^1.58.3"
+    },
+    "dependencies": {
+        "preact": "^10.13.0",
+        "preact-render-to-string": "^5.2.6",
+        "preact-router": "^4.1.0",
+        "rollup-plugin-scss": "^4.0.0"
+    }
+}

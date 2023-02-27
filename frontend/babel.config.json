@@ -1,0 +1,13 @@
+{
+    "presets": [
+        [
+            "@babel/preset-react",
+            {
+                "pragma": "h",
+                "pragmaFrag": "Fragment",
+                "runtime": "classic"
+            }
+        ],
+        ["@babel/preset-typescript", { "jsxPragma": "h", "jsxPragmaFrag": "Fragment" }]
+    ]
+}

@@ -1,0 +1,4 @@
+node_modules
+dist
+.vcs.files-autosave.json
+vcs.config.json
