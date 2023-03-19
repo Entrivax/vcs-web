@@ -3,7 +3,7 @@ import Stream = require('stream')
 import canvas = require('canvas')
 
 function extractScreenshotData(path: string, timestamp: number): Promise<Buffer> {
-    const inputSeek = Math.max(0, timestamp - 10)
+    // const inputSeek = Math.max(0, timestamp - 10)
     const buffers: any[] = []
     const stream = new Stream.PassThrough()
     stream.on('data', (chunk) => {
@@ -11,15 +11,22 @@ function extractScreenshotData(path: string, timestamp: number): Promise<Buffer>
     })
     return new Promise((resolve, reject) => {
         ffmpegCommand(path)
-            .seekInput(inputSeek)
-            .seek(timestamp - inputSeek)
+            // .seekInput(inputSeek)
+            // .seek(timestamp - inputSeek)
+            .seekInput(timestamp)
             .outputFormat('image2') // PNG
             .frames(1)
             .output(stream)
             .on('end', () => {
                 resolve(Buffer.concat(buffers))
             })
-            .on('error', reject)
+            .on('error', (err) => {
+                if (err.message === 'Output stream closed') {
+                    resolve(Buffer.concat(buffers))
+                } else {
+                    reject(err)
+                }
+            })
             .run()
     })
 }

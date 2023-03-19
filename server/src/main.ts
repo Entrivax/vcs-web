@@ -7,6 +7,7 @@ import WebSocket = require('ws')
 import http = require('http')
 import ffmpegCommand = require('fluent-ffmpeg')
 import Stream = require('stream')
+import async = require('async')
 import { extractScreenshot } from './utils/imageExtraction'
 import { loadConfig } from './utils/config'
 import { getTimestamps, secondsToTimestamp } from './utils/timestamps'
@@ -506,22 +507,33 @@ class VcsGenerationTask {
             const timestamps = getTimestamps(this.columns * this.rows, this.videoInfo.duration, this.timestamps)
     
             const thumbnails: canvas.Canvas[] = []
-            for (let i = 0; i < timestamps.length; i++) {
-                const timestamp = timestamps[i]
-                const img = await extractScreenshot(this.videoInfo.path, timestamp)
-                thumbnails.push(await prepareThumbnail(img, {
-                    thumbnailSize: this.thumbnailsSize,
-                    thumbnailPadding: this.thumbnailsPadding,
-                    thumbnailBorder: this.thumbnailsBorder,
-                    thumbnailBorderColor: this.borderColor,
-                    timestamp: secondsToTimestamp(timestamp, { noMillis: true, alwaysHours: timestamps[timestamps.length - 1] > 3600, alwaysMinutes: timestamps[timestamps.length - 1] > 60 }),
-                    textColor: this.textColor,
-                    textShadow: this.textShadow,
-                    font: this.font
-                }))
-                this.progress = (i + 1) / timestamps.length * 0.5
+            let completedTasks = 0
+            let incrementTasks = () => {
+                completedTasks++
+                this.progress = (completedTasks + 1) / timestamps.length * 0.5
                 this.progressUpdate(this)
             }
+            let tasks: (() => Promise<void>)[] = []
+            const start = performance.now()
+            for (let i = 0; i < timestamps.length; i++) {
+                tasks.push(async.asyncify(async () => {
+                    const timestamp = timestamps[i]
+                    const img = await extractScreenshot(this.videoInfo.path, timestamp)
+                    thumbnails[i] = (await prepareThumbnail(img, {
+                        thumbnailSize: this.thumbnailsSize,
+                        thumbnailPadding: this.thumbnailsPadding,
+                        thumbnailBorder: this.thumbnailsBorder,
+                        thumbnailBorderColor: this.borderColor,
+                        timestamp: secondsToTimestamp(timestamp, { noMillis: true, alwaysHours: timestamps[timestamps.length - 1] > 3600, alwaysMinutes: timestamps[timestamps.length - 1] > 60 }),
+                        textColor: this.textColor,
+                        textShadow: this.textShadow,
+                        font: this.font
+                    }))
+                    incrementTasks()
+                }))
+            }
+            await async.parallelLimit(tasks, 4)
+            console.log(`Took ${performance.now() - start} ms to extract screenshots`)
     
             const vcs = await generateVcs({
                 images: thumbnails,
@@ -562,7 +574,7 @@ ${this.videoInfo.width} x ${this.videoInfo.height}, ${this.videoInfo.fps} fps`,
             this.progressUpdate(this)
         } catch (err: any) {
             this.state = 'error'
-            this.error = 'message' in err ? err.message : err
+            this.error = err.stack
         }
     }
 }

@@ -31,6 +31,7 @@ export const DataContext = createContext<{
 export const DataProvider = ({ children }: { children: ComponentChildren }) => {
     const [files, setFiles] = useState<DataFile[] | null>(null);
     const [tasks, setTasks] = useState<DataTask[] | null>(null);
+    const [fetchRequests, setFetchRequests] = useState<Record<string, Promise<unknown> | null>>({})
     const { message } = useContext(WebSocketContext)
 
     useEffect(() => {
@@ -97,16 +98,50 @@ export const DataProvider = ({ children }: { children: ComponentChildren }) => {
     function deleteFile(file: string) {
         return fetch(`/file/${encodeURIComponent(file)}`, { method: 'DELETE' })
     }
-}
 
-function fetchFiles(callback) {
-    return fetch('/files')
-        .then(res => res.json())
-        .then(callback)
-}
+    function fetchFiles(callback) {
+        if (fetchRequests.files) {
+            return fetchRequests.files
+                .then(callback)
+        }
+        const request = new Promise((resolve) => {
+            setTimeout(() => {
+                resolve(
+                    fetch('/files')
+                        .then(res => res.json())
+                        .then((data) => {
+                            setFetchRequests(fetchRequests => ({ ...fetchRequests, files: null }))
+                            return data
+                        })
+                )
+            }, 100)
+        })
+        request
+            .then(callback)
+        setFetchRequests(fetchRequests => ({ ...fetchRequests, files: request }))
+        return request
+    }
 
-function fetchTasks(callback) {
-    return fetch('/tasks')
-        .then(res => res.json())
-        .then(callback)
+    function fetchTasks(callback) {
+        if (fetchRequests.tasks) {
+            return fetchRequests.tasks
+                .then(callback)
+        }
+        const request = new Promise((resolve) => {
+            setTimeout(() => {
+                resolve(
+                    fetch('/tasks')
+                        .then(res => res.json())
+                        .then((data) => {
+                            setFetchRequests(fetchRequests => ({ ...fetchRequests, tasks: null }))
+                            return data
+                        })
+                )
+            }, 100)
+        })
+        request
+            .then(callback)
+        setFetchRequests(fetchRequests => ({ ...fetchRequests, tasks: request }))
+        return request
+    }
 }
