@@ -86,7 +86,7 @@ export interface ThumbnailOptions {
     font: string
 }
 
-export async function prepareThumbnail(image: canvas.Image | canvas.Canvas, {
+export async function prepareThumbnail(image: canvas.Image | canvas.Canvas | null, {
     thumbnailSize,
     thumbnailBorder,
     thumbnailBorderColor,
@@ -96,6 +96,18 @@ export async function prepareThumbnail(image: canvas.Image | canvas.Canvas, {
     textShadow,
     font
 }: ThumbnailOptions) {
+    if (image == null) {
+        image = await new Promise<canvas.Image>((resolve, reject) => {
+            const img = new canvas.Image()
+            img.onload = () => {
+                resolve(img)
+            }
+            img.onerror = (err) => {
+                reject(err)
+            }
+            img.src = `data:image/svg+xml;base64,${Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="${thumbnailSize}" height="${thumbnailSize}" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5" viewBox="0 0 100 100"><circle cx="50" cy="50" r="41" style="fill:none;stroke:#9b1f1f;stroke-width:10px"/><path d="m21.014 78.986 57.972-57.972" style="fill:none;stroke:#9b1f1f;stroke-width:10px"/></svg>`).toString('base64')}`
+        })
+    }
     const ratio = Math.min(thumbnailSize / image.width, thumbnailSize / image.height)
     const newWidth = Math.ceil(image.width * ratio)
     const newHeight = Math.ceil(image.height * ratio)

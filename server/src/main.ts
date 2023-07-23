@@ -332,7 +332,10 @@ async function main() {
     async function updateFiles() {
         if (config.autosaveFilesLocation) {
             try {
-                fs.writeFile(config.autosaveFilesLocation, JSON.stringify(files))
+                await fs.writeFile(config.autosaveFilesLocation, JSON.stringify(files), {
+                    flag: 'w',
+                    encoding: 'utf8'
+                })
             } catch (err) {
                 console.error(err)
             }
@@ -518,7 +521,12 @@ class VcsGenerationTask {
             for (let i = 0; i < timestamps.length; i++) {
                 tasks.push(async.asyncify(async () => {
                     const timestamp = timestamps[i]
-                    const img = await extractScreenshot(this.videoInfo.path, timestamp)
+                    let img: canvas.Image | null = null
+                    try {
+                        img = await extractScreenshot(this.videoInfo.path, timestamp)
+                    } catch (err: any) {
+                        console.error(err)
+                    }
                     thumbnails[i] = (await prepareThumbnail(img, {
                         thumbnailSize: this.thumbnailsSize,
                         thumbnailPadding: this.thumbnailsPadding,
